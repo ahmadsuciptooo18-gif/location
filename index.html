@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Couple Tracker</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+}
+
+#map{
+height:100vh;
+}
+
+.panel{
+position:absolute;
+top:10px;
+left:10px;
+background:white;
+padding:10px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.2);
+z-index:1000;
+}
+
+input{
+padding:5px;
+margin-top:5px;
+}
+
+button{
+margin-top:5px;
+padding:6px 10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="panel">
+
+<div>
+Nama:
+<br>
+<input id="name" placeholder="Nama kamu">
+</div>
+
+<div>
+Room:
+<br>
+<input id="room" placeholder="contoh: pasangan1">
+</div>
+
+<button onclick="start()">START TRACKING</button>
+
+</div>
+
+<div id="map"></div>
+
+<script>
+
+// CONFIG FIREBASE (GANTI NANTI)
+var firebaseConfig = {
+  apiKey: "AIzaSyCSbGOCcfrBknSQjCTX6SJGGhC_aUFW7ZU",
+  authDomain: "location-70933.firebaseapp.com",
+  databaseURL: "https://location-70933-default-rtdb.firebaseio.com",
+  projectId: "location-70933",
+  storageBucket: "location-70933.firebasestorage.app",
+  messagingSenderId: "5867574142",
+  appId: "1:5867574142:web:81b92432ebe6c56bf8992f",
+  measurementId: "G-D7L3C2PJ3N"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+var db = firebase.database();
+
+var map = L.map('map').setView([-6.2,106.8],13);
+
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+var markers = {};
+
+function start(){
+
+let name = document.getElementById("name").value;
+let room = document.getElementById("room").value;
+
+if(!name || !room){
+alert("isi nama dan room dulu");
+return;
+}
+
+navigator.geolocation.watchPosition(function(pos){
+
+let lat = pos.coords.latitude;
+let lng = pos.coords.longitude;
+
+db.ref("rooms/"+room+"/"+name).set({
+lat:lat,
+lng:lng,
+time:Date.now()
+});
+
+});
+
+db.ref("rooms/"+room).on("value",function(snapshot){
+
+let users = snapshot.val();
+
+for(let user in users){
+
+let lat = users[user].lat;
+let lng = users[user].lng;
+
+if(!markers[user]){
+
+markers[user] = L.marker([lat,lng]).addTo(map)
+.bindPopup(user);
+
+}else{
+
+markers[user].setLatLng([lat,lng]);
+
+}
+
+}
+
+});
+
+}
+
+</script>
+
+</body>
+</html>
